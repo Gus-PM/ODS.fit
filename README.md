@@ -139,9 +139,7 @@ ODS.fit/
 
 ## Licencia
 
-Este proyecto está bajo la licencia Creative Commons Attribution-ShareAlike 4.0 International (CC-BY-SA-4.0).
-
-Puedes compartir y redistribuir el material, así como adaptarlo y transformarlo, siempre que otorgues el crédito apropiado y distribuyas tus contribuciones bajo la misma licencia.
+[ODS.fit](https://github.com/Gus-PM/ODS.fit) © 2026 by [Gustavo Pérez, Vanessa Bustos, Elías Pérez](https://github.com/Gus-PM) is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
 
 ## Contribuciones
 
