@@ -59,7 +59,7 @@ Siguiendo las recomendaciones de mentores, hemos acotado nuestro análisis a una
 
 | Variable | Fuente | Licencia | Justificación |
 |----------|--------|----------|---------------|
-| **Datos educativos Formato 911** | [SEP - Formato 911 (datos.gob.mx)](https://www.datos.gob.mx/dataset/registro_alumnado_personal_docente_educacion_basica_media_superior_formato_911) | Creative Commons Attribution 4.0 [Open Data] | Sistema oficial de estadísticas del Sistema Educativo Nacional, permite analizar inscripciones, egresados, docentes y abandono escolar por estado y nivel educativo |
+| **Datos educativos Formato 911** | [SEP - Formato 911 (datos.gob.mx)](https://www.datos.gob.mx/dataset/registro_alumnado_personal_docente_educacion_basica_media_superior_formato_911) | Creative Commons Attribution 4.0 [Open Data] | Al ser información pública de la SEP que nos provee los datos granulados respecto a la cantidad de alumnos inscritos, egresados y la cantidad de docentes por sexo, nos permite mediante un tratamiento adecuado conocer el porcentaje de abandono en los niveles básico y medio superior de 2019 a 2025 |
 
 **Metadatos del Dataset**
 
