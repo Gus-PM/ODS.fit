@@ -1,0 +1,19 @@
+project:
+  type: website
+  output-dir: ../docs
+
+website:
+  title: "ODS.fit | Educación en México"
+  navbar:
+    background: primary
+    left:
+      - text: "Dashboard"
+        href: index.qmd
+
+format:
+  dashboard:
+    theme: 
+      - cosmo
+      - custom.scss
+    logo: false
+    page-layout: full

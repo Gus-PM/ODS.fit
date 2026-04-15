@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Quarto
+/.quarto/
+_site/
+_freeze/
+*.html
+dashboard/index_files/
+
+# Data
+datos/raw/
+datos/processed/*.csv
+datos/processed/*.xlsx
+datos/processed/*.json
+!datos/README.md
+!datos/processed/README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# uv
+.uv/
+uv.lock
