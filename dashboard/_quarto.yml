@@ -15,5 +15,4 @@ format:
     theme: 
       - cosmo
       - custom.scss
-    logo: false
     page-layout: full

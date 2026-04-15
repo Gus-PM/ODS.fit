@@ -23,12 +23,7 @@ _freeze/
 dashboard/index_files/
 
 # Data
-datos/raw/
-datos/processed/*.csv
-datos/processed/*.xlsx
-datos/processed/*.json
-!datos/README.md
-!datos/processed/README.md
+# Nota: Los datos procesados SÍ se incluyen en el repo
 
 # IDE
 .vscode/

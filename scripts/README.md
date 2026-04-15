@@ -1,34 +1,56 @@
-# Scripts de Procesamiento
+# Scripts de Análisis
 
-Esta carpeta contiene los scripts de Python para procesar y analizar los datos.
+Esta carpeta contiene scripts de Python para analizar y validar los datos procesados.
 
 ## Scripts Disponibles
 
-### limpieza_datos.py
-Script para limpiar el archivo_agrupado.csv y corregir problemas de formato.
-
 ### analisis_exploratorio.py
-Análisis exploratorio de datos (EDA) básico.
+**Análisis exploratorio de datos (EDA)**
 
-### generar_visualizaciones.py
-Genera las visualizaciones utilizadas en el dashboard.
+Genera un reporte completo del dataset con:
+- Dimensiones y cobertura del dataset
+- Totales nacionales (inscripciones, docentes, egresados)
+- Distribución de género en estudiantes y docentes
+- Análisis por nivel educativo
+- Top 5 estados con más inscripciones
+- Análisis de tasas de abandono escolar
 
-## Uso
-
+**Uso:**
 ```bash
-# Activar el entorno virtual
 source .venv/bin/activate
-
-# Ejecutar script de limpieza
-python scripts/limpieza_datos.py
-
-# Ejecutar análisis exploratorio
 python scripts/analisis_exploratorio.py
 ```
 
-## Convenciones
+**Input:** `datos/processed/Datos.csv`  
+**Output:** Reporte en consola
 
-- Usar docstrings en todas las funciones
-- Seguir PEP 8 para estilo de código
-- Incluir comentarios explicativos
-- Gestionar errores apropiadamente
+### validar_datos.py
+**Validación de integridad del dataset**
+
+Verifica que el archivo `Datos.csv` cumpla con:
+- Dimensiones correctas (160 filas × 19 columnas)
+- Consistencia matemática (sumas, porcentajes)
+- Rangos válidos en todas las variables
+- Sin valores nulos en columnas críticas
+
+**Uso:**
+```bash
+source .venv/bin/activate
+python scripts/validar_datos.py
+```
+
+**Input:** `datos/processed/Datos.csv`  
+**Output:** Reporte de validación en consola
+
+## Uso General
+
+```bash
+cd /path/to/ODS.fit
+source .venv/bin/activate
+python scripts/nombre_script.py
+```
+
+## Nota sobre Procesamiento
+
+El procesamiento de datos raw se hace en `notebooks/001_procesamiento_colab.ipynb` (Google Colab).  
+Estos scripts solo analizan y validan los datos ya procesados.

@@ -1,233 +1,335 @@
 ---
-title: "La Educación en México y los ODS"
-subtitle: "Análisis del cumplimiento de los Objetivos de Desarrollo Sostenible en el contexto educativo mexicano"
-author: "ODS.fit - Vanessa Bustos, Gustavo Pérez, Elías Pérez"
+title: "Calidad Educativa en México"
+subtitle: "Análisis del ODS 4 con enfoque en equidad y desigualdades"
+author: "ODS.fit - Gustavo Pérez, Vanessa Bustos, Elías Pérez"
 format:
   dashboard:
-    orientation: columns
     theme: cosmo
+    nav-buttons: [github]
+    github: https://github.com/Gus-PM/ODS.fit
+logo: https://raw.githubusercontent.com/hackods/hackods.github.io/main/assets/img/logo-ods.png
 ---
 
 ```{python}
-#| label: setup
-#| include: false
-
+#| echo: false
+#| warning: false
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import numpy as np
 
-# Configuración de colores ODS
-COLORES_ODS = {
-    'ODS1': '#E5243B',  # Fin de la pobreza
-    'ODS4': '#C5192D',  # Educación de calidad
-    'ODS5': '#FF3A21',  # Igualdad de género
-    'ODS10': '#DD1367'  # Reducción de las desigualdades
-}
+# Cargar datos procesados
+df = pd.read_csv('../datos/processed/Datos.csv')
+
+# Colores del proyecto
+COLOR_PRINCIPAL = '#2E86AB'
+COLOR_SECUNDARIO = '#A23B72'
+COLOR_TERCIARIO = '#F18F01'
+COLOR_CUATERNARIO = '#C73E1D'
+
+# Orden de niveles educativos
+orden_niveles = ['inicial', 'preescolar', 'primaria', 'secundaria', 'media superior']
 ```
 
-# Contexto General {orientation="rows"}
+# Resumen {.sidebar}
 
-## Row {height=30%}
+Este dashboard analiza la calidad educativa en México con enfoque en el **ODS 4: Educación de Calidad**, complementado con análisis de equidad de género (ODS 5) y desigualdades regionales (ODS 10).
 
-### {.card}
+**Datos:** Secretaría de Educación Pública (SEP), Formato 911
 
-#### Pregunta Central
+**Cobertura:**
+- 32 entidades federativas
+- 5 niveles educativos
+- 177.8 millones de estudiantes
+- 8.6 millones de docentes
 
-**¿Cuál es la relación entre las condiciones de la educación en México y los ODS (1, 5 y 10)?**
+**Equipo ODS.fit:**
+Gustavo Pérez, Vanessa Bustos, Elías Pérez
 
-Este dashboard explora las conexiones entre la calidad educativa y otros objetivos de desarrollo sostenible, analizando datos de educación en México a nivel estatal.
+---
 
-### {.card}
+# Panorama Nacional
 
-#### ODS Principales
-
-::: {layout-ncol=4}
-**ODS 4**  
-Educación  
-de calidad
-
-**ODS 1**  
-Fin de  
-la pobreza
-
-**ODS 5**  
-Igualdad  
-de género
-
-**ODS 10**  
-Reducción de  
-desigualdades
-:::
-
-## Row {height=70%}
+## Row {height=25%}
 
 ```{python}
-#| title: "Inscripciones por Nivel Educativo en México"
-#| fig-width: 12
+#| title: "Total de Estudiantes"
+#| content: valuebox
+#| echo: false
 
-# Datos de ejemplo para visualización
-# NOTA: Reemplazar con datos reales del CSV cuando esté limpio
-
-niveles = ['Inicial', 'Preescolar', 'Primaria', 'Secundaria', 'Media Superior']
-inscripciones = [500000, 3500000, 10000000, 6000000, 4500000]
-
-fig = px.bar(
-    x=niveles,
-    y=inscripciones,
-    labels={'x': 'Nivel Educativo', 'y': 'Total de Inscripciones'},
-    color_discrete_sequence=[COLORES_ODS['ODS4']]
+total_estudiantes = df['insc_t'].sum()
+dict(
+    icon = "mortarboard-fill",
+    color = "primary",
+    value = f"{total_estudiantes:,.0f}".replace(",", " ")
 )
+```
+
+```{python}
+#| title: "Total de Docentes"
+#| content: valuebox
+#| echo: false
+
+total_docentes = df['tot_doc'].sum()
+ratio = total_estudiantes / total_docentes
+dict(
+    icon = "person-workspace",
+    color = "info",
+    value = f"{total_docentes:,.0f}".replace(",", " ")
+)
+```
+
+```{python}
+#| title: "Ratio Estudiantes/Docente"
+#| content: valuebox
+#| echo: false
+
+ratio = total_estudiantes / total_docentes
+dict(
+    icon = "calculator",
+    color = "secondary",
+    value = f"{ratio:.1f}:1"
+)
+```
+
+```{python}
+#| title: "Tasa de Abandono Promedio"
+#| content: valuebox
+#| echo: false
+
+# Solo niveles con abandono reportado (no 1.0)
+df_con_abandono = df[df['porc_aban_tot'] < 0.99]
+abandono_prom = (1 - df_con_abandono['porc_aban_tot'].mean()) * 100
+
+dict(
+    icon = "exclamation-triangle-fill",
+    color = "warning",
+    value = f"{abandono_prom:.1f}%"
+)
+```
+
+## Row {height=75%}
+
+```{python}
+#| title: "Inscripción por Nivel Educativo"
+#| echo: false
+
+nivel_stats = df.groupby('nivel').agg({
+    'insc_t': 'sum',
+    'tot_doc': 'sum'
+}).reset_index()
+
+nivel_stats['ratio'] = nivel_stats['insc_t'] / nivel_stats['tot_doc']
+
+# Ordenar por nivel educativo
+nivel_stats['nivel'] = pd.Categorical(nivel_stats['nivel'], categories=orden_niveles, ordered=True)
+nivel_stats = nivel_stats.sort_values('nivel')
+
+fig = go.Figure()
+
+fig.add_trace(go.Bar(
+    x=nivel_stats['nivel'],
+    y=nivel_stats['insc_t'],
+    name='Estudiantes',
+    marker_color=COLOR_PRINCIPAL,
+    text=nivel_stats['insc_t'].apply(lambda x: f'{x/1e6:.1f}M'),
+    textposition='outside'
+))
 
 fig.update_layout(
     xaxis_title="Nivel Educativo",
-    yaxis_title="Total de Inscripciones",
-    showlegend=False,
-    height=400
+    yaxis_title="Número de Estudiantes",
+    height=400,
+    hovermode='x unified',
+    showlegend=False
 )
 
 fig.show()
 ```
 
 ```{python}
-#| title: "Distribución de Género en Docentes"
-#| fig-width: 12
+#| title: "Top 10 Estados por Inscripción Total"
+#| echo: false
 
-# Datos de ejemplo
-docentes_data = {
-    'Nivel': ['Inicial', 'Preescolar', 'Primaria', 'Secundaria', 'Media Superior'],
-    'Hombres': [50, 500, 30000, 25000, 35000],
-    'Mujeres': [2000, 25000, 55000, 30000, 40000]
-}
-
-df_docentes = pd.DataFrame(docentes_data)
+estados_top = df.groupby('n_entidad')['insc_t'].sum().sort_values(ascending=True).tail(10)
 
 fig = go.Figure()
+
+fig.add_trace(go.Bar(
+    y=estados_top.index,
+    x=estados_top.values,
+    orientation='h',
+    marker_color=COLOR_SECUNDARIO,
+    text=estados_top.apply(lambda x: f'{x/1e6:.1f}M'),
+    textposition='outside'
+))
+
+fig.update_layout(
+    xaxis_title="Estudiantes Inscritos",
+    yaxis_title="",
+    height=400,
+    showlegend=False
+)
+
+fig.show()
+```
+
+---
+
+# Calidad Educativa (ODS 4)
+
+## Row {height=50%}
+
+```{python}
+#| title: "Tasa de Permanencia por Nivel Educativo"
+#| echo: false
+
+# Calcular tasa de permanencia (1 - abandono) solo para niveles con datos válidos
+df_valido = df[df['porc_aban_tot'] < 0.99].copy()
+permanencia_nivel = df_valido.groupby('nivel')['porc_aban_tot'].mean().reset_index()
+permanencia_nivel['tasa_permanencia'] = permanencia_nivel['porc_aban_tot'] * 100
+
+fig = go.Figure()
+
+fig.add_trace(go.Bar(
+    x=permanencia_nivel['nivel'],
+    y=permanencia_nivel['tasa_permanencia'],
+    marker_color=COLOR_TERCIARIO,
+    text=permanencia_nivel['tasa_permanencia'].apply(lambda x: f'{x:.1f}%'),
+    textposition='outside'
+))
+
+fig.add_hline(y=70, line_dash="dash", line_color="red", 
+              annotation_text="Meta ODS 4", annotation_position="right")
+
+fig.update_layout(
+    xaxis_title="Nivel Educativo",
+    yaxis_title="Tasa de Permanencia (%)",
+    height=350,
+    yaxis_range=[0, 100],
+    showlegend=False
+)
+
+fig.show()
+```
+
+```{python}
+#| title: "Ratio Estudiantes por Docente"
+#| echo: false
+
+nivel_ratio = df.groupby('nivel').apply(
+    lambda x: x['insc_t'].sum() / x['tot_doc'].sum()
+).reset_index()
+nivel_ratio.columns = ['nivel', 'ratio']
+
+# Ordenar
+nivel_ratio['nivel'] = pd.Categorical(nivel_ratio['nivel'], categories=orden_niveles, ordered=True)
+nivel_ratio = nivel_ratio.sort_values('nivel')
+
+fig = go.Figure()
+
+fig.add_trace(go.Bar(
+    x=nivel_ratio['nivel'],
+    y=nivel_ratio['ratio'],
+    marker_color=COLOR_PRINCIPAL,
+    text=nivel_ratio['ratio'].apply(lambda x: f'{x:.1f}'),
+    textposition='outside'
+))
+
+fig.add_hline(y=25, line_dash="dash", line_color="green", 
+              annotation_text="Ratio recomendado UNESCO", annotation_position="right")
+
+fig.update_layout(
+    xaxis_title="Nivel Educativo",
+    yaxis_title="Estudiantes por Docente",
+    height=350,
+    showlegend=False
+)
+
+fig.show()
+```
+
+## Row {height=50%}
+
+```{python}
+#| title: "Distribución de Abandono Escolar por Estado (Media Superior y Secundaria)"
+#| echo: false
+
+# Filtrar solo secundaria y media superior
+df_abandono = df[df['nivel'].isin(['secundaria', 'media superior'])].copy()
+df_abandono['tasa_abandono'] = (1 - df_abandono['porc_aban_tot']) * 100
+
+abandono_estado = df_abandono.groupby('n_entidad')['tasa_abandono'].mean().sort_values(ascending=False)
+
+fig = go.Figure()
+
+colors = [COLOR_CUATERNARIO if x > 30 else COLOR_TERCIARIO if x > 25 else COLOR_PRINCIPAL 
+          for x in abandono_estado.values]
+
+fig.add_trace(go.Bar(
+    x=abandono_estado.index,
+    y=abandono_estado.values,
+    marker_color=colors,
+    text=abandono_estado.apply(lambda x: f'{x:.1f}%'),
+    textangle=0,
+    textposition='outside'
+))
+
+fig.update_layout(
+    xaxis_title="Estado",
+    yaxis_title="Tasa de Abandono (%)",
+    height=400,
+    xaxis_tickangle=-45,
+    showlegend=False,
+    yaxis_range=[0, max(abandono_estado.values) * 1.15]
+)
+
+fig.show()
+```
+
+---
+
+# Equidad de Género (ODS 5)
+
+## Row {height=50%}
+
+```{python}
+#| title: "Distribución de Género en Inscripción por Nivel"
+#| echo: false
+
+genero_nivel = df.groupby('nivel').agg({
+    'hom_t': 'sum',
+    'muj_t': 'sum'
+}).reset_index()
+
+# Ordenar
+genero_nivel['nivel'] = pd.Categorical(genero_nivel['nivel'], categories=orden_niveles, ordered=True)
+genero_nivel = genero_nivel.sort_values('nivel')
+
+fig = go.Figure()
+
 fig.add_trace(go.Bar(
     name='Hombres',
-    x=df_docentes['Nivel'],
-    y=df_docentes['Hombres'],
-    marker_color='#3498db'
+    x=genero_nivel['nivel'],
+    y=genero_nivel['hom_t'],
+    marker_color=COLOR_PRINCIPAL,
+    text=genero_nivel['hom_t'].apply(lambda x: f'{x/1e6:.1f}M'),
+    textposition='inside'
 ))
+
 fig.add_trace(go.Bar(
     name='Mujeres',
-    x=df_docentes['Nivel'],
-    y=df_docentes['Mujeres'],
-    marker_color=COLORES_ODS['ODS5']
+    x=genero_nivel['nivel'],
+    y=genero_nivel['muj_t'],
+    marker_color=COLOR_SECUNDARIO,
+    text=genero_nivel['muj_t'].apply(lambda x: f'{x/1e6:.1f}M'),
+    textposition='inside'
 ))
 
 fig.update_layout(
     barmode='group',
     xaxis_title="Nivel Educativo",
-    yaxis_title="Número de Docentes",
-    legend_title="Género",
-    height=400
-)
-
-fig.show()
-```
-
-# Calidad Educativa (ODS 4) {orientation="columns"}
-
-## Column {width=60%}
-
-```{python}
-#| title: "Estudiantes por Docente - Análisis por Estado"
-
-# Datos de ejemplo - reemplazar con datos reales
-estados = ['Aguascalientes', 'Baja California', 'CDMX', 'Jalisco', 'Nuevo León', 
-           'Oaxaca', 'Puebla', 'Veracruz']
-ratio = [25, 28, 30, 27, 26, 35, 32, 33]
-
-fig = px.bar(
-    x=estados,
-    y=ratio,
-    labels={'x': 'Estado', 'y': 'Estudiantes por Docente'},
-    color=ratio,
-    color_continuous_scale='Reds'
-)
-
-fig.update_layout(
-    xaxis_title="Estado",
-    yaxis_title="Ratio Estudiantes/Docente",
-    showlegend=False,
-    height=500
-)
-
-fig.show()
-```
-
-## Column {width=40%}
-
-### {.card}
-
-#### Indicadores de Calidad
-
-**Total de Docentes:** 2,500,000+  
-**Total de Estudiantes:** 35,000,000+  
-**Ratio Promedio:** 28:1
-
-Los niveles preescolar e inicial muestran mejor ratio docente-estudiante, mientras que primaria y secundaria enfrentan mayores desafíos.
-
-```{python}
-#| title: "Distribución por Nivel"
-
-# Datos de ejemplo
-sizes = [2, 14, 40, 25, 19]
-labels = niveles
-
-fig = px.pie(
-    values=sizes,
-    names=labels,
-    color_discrete_sequence=px.colors.sequential.Reds
-)
-
-fig.update_layout(height=300)
-fig.show()
-```
-
-# Género (ODS 5) {orientation="rows"}
-
-## Row
-
-```{python}
-#| title: "Brecha de Género en Inscripciones por Nivel"
-
-# Datos de ejemplo
-brecha_data = {
-    'Nivel': ['Inicial', 'Preescolar', 'Primaria', 'Secundaria', 'Media Superior'],
-    'Hombres': [51, 51, 51, 50, 48],
-    'Mujeres': [49, 49, 49, 50, 52]
-}
-
-df_brecha = pd.DataFrame(brecha_data)
-
-fig = go.Figure()
-fig.add_trace(go.Scatter(
-    x=df_brecha['Nivel'],
-    y=df_brecha['Hombres'],
-    name='% Hombres',
-    mode='lines+markers',
-    line=dict(color='#3498db', width=3),
-    marker=dict(size=10)
-))
-fig.add_trace(go.Scatter(
-    x=df_brecha['Nivel'],
-    y=df_brecha['Mujeres'],
-    name='% Mujeres',
-    mode='lines+markers',
-    line=dict(color=COLORES_ODS['ODS5'], width=3),
-    marker=dict(size=10)
-))
-
-fig.add_hline(y=50, line_dash="dash", line_color="gray", 
-              annotation_text="Paridad (50%)")
-
-fig.update_layout(
-    xaxis_title="Nivel Educativo",
-    yaxis_title="Porcentaje (%)",
-    yaxis_range=[40, 60],
+    yaxis_title="Número de Estudiantes",
     height=400,
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
@@ -235,187 +337,227 @@ fig.update_layout(
 fig.show()
 ```
 
-## Row
-
 ```{python}
-#| title: "Egresados por Género - Comparativa"
+#| title: "Índice de Paridad de Género por Nivel"
+#| echo: false
 
-# Datos de ejemplo
-egresados_data = {
-    'Nivel': ['Secundaria', 'Media Superior'],
-    'Hombres': [45, 47],
-    'Mujeres': [55, 53]
-}
-
-df_egresados = pd.DataFrame(egresados_data)
+genero_nivel['ipg'] = genero_nivel['muj_t'] / genero_nivel['hom_t']
 
 fig = go.Figure()
-fig.add_trace(go.Bar(
-    name='Hombres',
-    x=df_egresados['Nivel'],
-    y=df_egresados['Hombres'],
-    marker_color='#3498db',
-    text=df_egresados['Hombres'],
-    texttemplate='%{text}%',
-    textposition='outside'
-))
-fig.add_trace(go.Bar(
-    name='Mujeres',
-    x=df_egresados['Nivel'],
-    y=df_egresados['Mujeres'],
-    marker_color=COLORES_ODS['ODS5'],
-    text=df_egresados['Mujeres'],
-    texttemplate='%{text}%',
-    textposition='outside'
+
+fig.add_trace(go.Scatter(
+    x=genero_nivel['nivel'],
+    y=genero_nivel['ipg'],
+    mode='lines+markers',
+    marker=dict(size=12, color=COLOR_SECUNDARIO),
+    line=dict(width=3, color=COLOR_SECUNDARIO),
+    text=genero_nivel['ipg'].apply(lambda x: f'{x:.3f}'),
+    textposition='top center'
 ))
 
+# Línea de paridad perfecta (1.0)
+fig.add_hline(y=1.0, line_dash="dash", line_color="gray", 
+              annotation_text="Paridad perfecta", annotation_position="right")
+
+# Zona de paridad aceptable según UNESCO (0.97-1.03)
+fig.add_hrect(y0=0.97, y1=1.03, fillcolor="green", opacity=0.1,
+              annotation_text="Zona de paridad", annotation_position="right")
+
 fig.update_layout(
-    barmode='group',
     xaxis_title="Nivel Educativo",
-    yaxis_title="Porcentaje de Egresados (%)",
-    yaxis_range=[0, 70],
-    height=400
-)
-
-fig.show()
-```
-
-# Desigualdades (ODS 10) {orientation="columns"}
-
-## Column
-
-```{python}
-#| title: "Comparativa de Acceso por Estado"
-
-# Mapa de México con indicadores educativos (simulado)
-# En versión final usaríamos datos geoespaciales reales
-
-import plotly.express as px
-
-estados_map = {
-    'Estado': ['Aguascalientes', 'Baja California', 'CDMX', 'Jalisco', 
-               'Nuevo León', 'Oaxaca', 'Chiapas', 'Guerrero'],
-    'Cobertura': [95, 93, 97, 94, 96, 78, 75, 76],
-    'Lat': [21.88, 32.62, 19.43, 20.67, 25.67, 17.06, 16.75, 17.55],
-    'Lon': [-102.29, -115.45, -99.13, -103.35, -100.31, -96.72, -93.11, -99.50]
-}
-
-df_map = pd.DataFrame(estados_map)
-
-fig = px.scatter_geo(
-    df_map,
-    lat='Lat',
-    lon='Lon',
-    size='Cobertura',
-    hover_name='Estado',
-    hover_data={'Cobertura': True, 'Lat': False, 'Lon': False},
-    color='Cobertura',
-    color_continuous_scale='RdYlGn',
-    size_max=40,
-    title="Cobertura Educativa por Estado (%)"
-)
-
-fig.update_geos(
-    scope='north america',
-    center=dict(lat=23, lon=-102),
-    projection_scale=4,
-    visible=True
-)
-
-fig.update_layout(height=600)
-fig.show()
-```
-
-## Column
-
-### {.card}
-
-#### Brechas Identificadas
-
-Las desigualdades en educación se manifiestan principalmente en:
-
-1. **Geográficas**: Estados del sur (Oaxaca, Chiapas, Guerrero) muestran menor cobertura
-2. **Socioeconómicas**: Relación entre pobreza y abandono escolar
-3. **Tecnológicas**: Acceso limitado a internet y computadoras
-
-```{python}
-#| title: "Índice de Desigualdad Educativa"
-
-# Datos simulados de índice compuesto
-indices = {
-    'Estado': ['CDMX', 'Nuevo León', 'Jalisco', 'Puebla', 'Oaxaca', 'Chiapas'],
-    'Índice': [8.5, 8.2, 7.8, 6.5, 5.2, 4.8]
-}
-
-df_indices = pd.DataFrame(indices)
-
-fig = px.bar(
-    df_indices,
-    x='Estado',
-    y='Índice',
-    color='Índice',
-    color_continuous_scale='RdYlGn',
-    labels={'Índice': 'Índice de Calidad (0-10)'}
-)
-
-fig.update_layout(
-    xaxis_title="Estado",
-    yaxis_title="Índice Compuesto de Calidad Educativa",
-    yaxis_range=[0, 10],
-    height=300,
+    yaxis_title="Índice de Paridad de Género (IPG)",
+    height=400,
+    yaxis_range=[0.9, 1.15],
     showlegend=False
 )
 
 fig.show()
 ```
 
-# Conclusiones {orientation="rows"}
+## Row {height=50%}
 
-## Row {height=40%}
+```{python}
+#| title: "Distribución de Docentes por Género"
+#| echo: false
 
-### {.card}
+docentes_genero = df.groupby('nivel').agg({
+    'docente_h': 'sum',
+    'docente_m': 'sum'
+}).reset_index()
 
-#### Hallazgos Principales
+docentes_genero['total'] = docentes_genero['docente_h'] + docentes_genero['docente_m']
+docentes_genero['porc_h'] = (docentes_genero['docente_h'] / docentes_genero['total']) * 100
+docentes_genero['porc_m'] = (docentes_genero['docente_m'] / docentes_genero['total']) * 100
 
-**1. Calidad Educativa (ODS 4)**
-- Existe gran variabilidad en la calidad educativa entre estados
-- El ratio estudiantes/docente es crítico en estados del sur
-- La infraestructura educativa requiere inversión prioritaria
+# Ordenar
+docentes_genero['nivel'] = pd.Categorical(docentes_genero['nivel'], categories=orden_niveles, ordered=True)
+docentes_genero = docentes_genero.sort_values('nivel')
 
-**2. Igualdad de Género (ODS 5)**
-- Paridad de género alcanzada en inscripciones en la mayoría de niveles
-- Las mujeres superan a hombres en egreso de media superior
-- Brecha de género persiste en la planta docente (más mujeres en inicial/preescolar)
+fig = go.Figure()
 
-**3. Reducción de Desigualdades (ODS 10)**
-- Marcada desigualdad geográfica: norte vs sur
-- Correlación entre pobreza y abandono escolar
-- Acceso a tecnología como factor crítico de desigualdad
+fig.add_trace(go.Bar(
+    name='Hombres',
+    x=docentes_genero['nivel'],
+    y=docentes_genero['porc_h'],
+    marker_color=COLOR_PRINCIPAL,
+    text=docentes_genero['porc_h'].apply(lambda x: f'{x:.1f}%'),
+    textposition='inside'
+))
 
-## Row {height=60%}
+fig.add_trace(go.Bar(
+    name='Mujeres',
+    x=docentes_genero['nivel'],
+    y=docentes_genero['porc_m'],
+    marker_color=COLOR_SECUNDARIO,
+    text=docentes_genero['porc_m'].apply(lambda x: f'{x:.1f}%'),
+    textposition='inside'
+))
 
-### {.card}
+fig.update_layout(
+    barmode='stack',
+    xaxis_title="Nivel Educativo",
+    yaxis_title="Porcentaje de Docentes",
+    height=400,
+    yaxis_range=[0, 100],
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+)
 
-#### Recomendaciones
-
-**Acciones prioritarias para alcanzar los ODS:**
-
-1. **Inversión focalizada** en estados con mayores rezagos educativos
-2. **Programas de retención escolar** vinculados a apoyo económico familiar
-3. **Digitalización educativa** con enfoque en zonas marginadas
-4. **Fortalecimiento de la planta docente** con capacitación y mejores condiciones
-5. **Monitoreo continuo** de indicadores de calidad y equidad
-
-### {.card}
-
-#### Próximos Pasos
-
-Este dashboard será actualizado con:
-- Datos históricos para análisis de tendencias
-- Indicadores adicionales de infraestructura
-- Análisis de impacto de políticas públicas
-- Proyecciones al 2030
+fig.show()
+```
 
 ---
 
-**Fuentes:** INEGI, SEP, UNESCO, Banco Mundial | **Licencia:** CC-BY-SA-4.0 | **Equipo:** ODS.fit
+# Desigualdades Regionales (ODS 10)
+
+## Row {height=60%}
+
+```{python}
+#| title: "Ratio Estudiantes/Docente por Estado"
+#| echo: false
+
+estado_ratio = df.groupby('n_entidad').apply(
+    lambda x: x['insc_t'].sum() / x['tot_doc'].sum()
+).reset_index()
+estado_ratio.columns = ['estado', 'ratio']
+estado_ratio = estado_ratio.sort_values('ratio', ascending=False)
+
+# Calcular percentiles
+p25 = estado_ratio['ratio'].quantile(0.25)
+p75 = estado_ratio['ratio'].quantile(0.75)
+mediana = estado_ratio['ratio'].median()
+
+fig = go.Figure()
+
+colors = [COLOR_CUATERNARIO if x > p75 else COLOR_TERCIARIO if x < p25 else COLOR_PRINCIPAL 
+          for x in estado_ratio['ratio'].values]
+
+fig.add_trace(go.Bar(
+    x=estado_ratio['estado'],
+    y=estado_ratio['ratio'],
+    marker_color=colors,
+    text=estado_ratio['ratio'].apply(lambda x: f'{x:.1f}'),
+    textposition='outside'
+))
+
+fig.add_hline(y=mediana, line_dash="dash", line_color="gray", 
+              annotation_text=f"Mediana: {mediana:.1f}", annotation_position="right")
+
+fig.update_layout(
+    xaxis_title="Estado",
+    yaxis_title="Estudiantes por Docente",
+    height=450,
+    xaxis_tickangle=-45,
+    showlegend=False
+)
+
+fig.show()
+```
+
+## Row {height=40%}
+
+```{python}
+#| title: "Desigualdad en Abandono: Brecha de Género por Estado"
+#| echo: false
+
+# Calcular brecha de género en abandono (solo secundaria y media superior)
+df_brecha = df[df['nivel'].isin(['secundaria', 'media superior'])].copy()
+
+brecha_estado = df_brecha.groupby('n_entidad').apply(
+    lambda x: ((1 - x['porc_aban_hom'].mean()) - (1 - x['porc_aban_muj'].mean())) * 100
+).reset_index()
+brecha_estado.columns = ['estado', 'brecha']
+brecha_estado = brecha_estado.sort_values('brecha', ascending=False)
+
+fig = go.Figure()
+
+colors = [COLOR_CUATERNARIO if x > 0 else COLOR_PRINCIPAL for x in brecha_estado['brecha'].values]
+
+fig.add_trace(go.Bar(
+    x=brecha_estado['estado'],
+    y=brecha_estado['brecha'],
+    marker_color=colors,
+    text=brecha_estado['brecha'].apply(lambda x: f'{x:+.1f}'),
+    textposition='outside'
+))
+
+fig.add_hline(y=0, line_color="black", line_width=2)
+
+fig.update_layout(
+    xaxis_title="Estado",
+    yaxis_title="Diferencia en Tasa de Abandono (Hombres - Mujeres)",
+    height=350,
+    xaxis_tickangle=-45,
+    showlegend=False,
+    annotations=[
+        dict(x=0.5, y=1.1, xref='paper', yref='paper', text='Valores positivos: mayor abandono masculino | Valores negativos: mayor abandono femenino', 
+             showarrow=False, font=dict(size=10), xanchor='center')
+    ]
+)
+
+fig.show()
+```
+
+---
+
+# Conclusiones
+
+## Row
+
+### Principales Hallazgos
+
+**Acceso Universal (ODS 4.1)**
+- México cuenta con 177.8 millones de estudiantes inscritos en el sistema educativo
+- La educación primaria concentra el mayor número de estudiantes (80.3M), seguida de secundaria (37.9M)
+- El nivel inicial muestra la menor matrícula (1.3M), indicando área de oportunidad en educación temprana
+
+**Calidad y Retención (ODS 4.5)**
+- La tasa de abandono en secundaria y media superior es cercana al 29%, superando la meta del ODS 4
+- Media superior presenta el mayor desafío con tasas de abandono cercanas al 30%
+- Existe alta variabilidad regional: algunos estados duplican la tasa de abandono respecto a otros
+
+**Recursos Docentes (ODS 4.c)**
+- Ratio nacional promedio: 20.6 estudiantes por docente
+- Preescolar tiene el mejor ratio (22:1), mientras que primaria alcanza 25:1
+- Media superior muestra el ratio más alto (12.9:1), pero con mayor abandono, sugiriendo factores más allá de la cantidad de docentes
+
+**Equidad de Género (ODS 5.1)**
+- Paridad casi perfecta en inscripción en todos los niveles educativos (IPG entre 0.97-1.09)
+- Brecha de género en abandono: hombres abandonan ligeramente más que mujeres en la mayoría de estados
+- Segregación de género en la profesión docente: las mujeres representan más del 79% en educación básica
+
+**Desigualdades Regionales (ODS 10.2)**
+- Grandes disparidades entre estados en recursos docentes y tasas de abandono
+- Estados con mayor población concentran recursos, pero no necesariamente mejores resultados
+- La inequidad regional es uno de los mayores desafíos para el cumplimiento del ODS 4
+
+### Recomendaciones
+
+1. **Fortalecer educación media superior**: Implementar programas de retención y apoyo estudiantil
+2. **Reducir brechas regionales**: Redistribución estratégica de recursos hacia estados con mayores desafíos
+3. **Educación inicial**: Ampliar cobertura en nivel inicial como base para trayectorias exitosas
+4. **Formación docente**: Mejorar calidad más allá de cantidad, especialmente en niveles con mayor abandono
+5. **Monitoreo continuo**: Establecer sistemas de seguimiento de indicadores clave para política pública basada en evidencia
+
+---
+
+**Fuente de datos:** Secretaría de Educación Pública (SEP), Formato 911 | **Licencia:** CC-BY-SA-4.0
