@@ -19,8 +19,10 @@ build/
 /.quarto/
 _site/
 _freeze/
-*.html
 dashboard/index_files/
+# Ignorar HTML generados temporalmente, excepto docs/ para GitHub Pages
+*.html
+!docs/**/*.html
 
 # Data
 # Nota: Los datos procesados SÍ se incluyen en el repo
