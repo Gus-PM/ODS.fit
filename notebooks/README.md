@@ -4,10 +4,16 @@ Esta carpeta contiene Jupyter notebooks para análisis exploratorio y documentac
 
 ## Notebooks de Procesamiento
 
-### 001_procesamiento_colab.ipynb
-**Procesamiento de datos educativos en Google Colab**
+### 1_Manejo_Datos.ipynb
+**Procesamiento de datos educativos en Google Colab** (Principal)
 
 Este notebook construye el archivo `Datos.csv` desde los datos raw almacenados en Google Drive.
+Desarrollado por el equipo ODS.fit.
+
+### 001_procesamiento_colab.ipynb
+**Versión alternativa de procesamiento en Google Colab**
+
+Este notebook también construye el archivo `Datos.csv` desde los datos raw almacenados en Google Drive.
 
 **Uso en Google Colab:**
 1. Abre el notebook en Google Colab
@@ -44,7 +50,8 @@ Los siguientes notebooks se crearán conforme avance el proyecto:
 ## ¿Cuál notebook usar?
 
 **Para generar/regenerar el dataset procesado:**
-- 👉 Usa `001_procesamiento_colab.ipynb` en Google Colab (no requiere descargar 800 MB)
+- 👉 Usa `1_Manejo_Datos.ipynb` en Google Colab (no requiere descargar 800 MB)
+- Alternativa: `001_procesamiento_colab.ipynb`
 
 **Para trabajar localmente con los datos raw descargados:**
 - 👉 Usa `002_procesamiento_local.ipynb` 
